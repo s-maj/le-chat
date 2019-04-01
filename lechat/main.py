@@ -1,5 +1,4 @@
 import logging
-import weakref
 
 from aiohttp import web
 
@@ -10,11 +9,12 @@ from websocket import close_websockets
 
 async def init_app():
     app = web.Application()
-    app["websockets"] = weakref.WeakSet()
+    app["websockets"] = set()
 
     app.on_startup.append(init_redis)
     app.on_shutdown.append(close_websockets)
     app.on_cleanup.append(close_redis)
+
     setup_routes(app)
 
     return app
