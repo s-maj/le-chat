@@ -1,7 +1,9 @@
+import asyncio
+
 from aiohttp import WSMsgType, WSCloseCode
 from aiohttp import web
+
 from redis import read_stream
-import asyncio
 
 
 async def websocket_handler(request):
@@ -19,13 +21,14 @@ async def websocket_handler(request):
                     await ws.close()
                 else:
                     await request.app["redis"].xadd(
-                        "general", {"msg": msg.data}, max_len=1000
+                        "general", {"msg": msg.data}, max_len=5000
                     )
             elif msg.type == WSMsgType.ERROR:
                 print("ws connection closed with exception %s" % ws.exception())
     finally:
         request.app["websockets"].discard(ws)
         task.cancel()
+
     return ws
 
 
