@@ -14,19 +14,15 @@ async def close_redis(app):
     await app["redis"].wait_closed()
 
 
-async def read_stream(app, ws):
+async def read_stream(app, ws, chans):
     try:
-        all_msgs = await app["redis"].xrange("general", count=100)
-        latest_id, _ = all_msgs[-1]
-
-        for msg in all_msgs:
-            await ws.send_str(str(msg))
-
         while True:
-            print(latest_id)
-            chunk_msgs = await app["redis"].xread(["general"], latest_ids=[latest_id])
-            stream, latest_id, _ = chunk_msgs[-1]
+            chunk_msgs = await app["redis"].xread(list(chans.keys()), latest_ids=list(chans.values()), timeout=None)
+
             for msg in chunk_msgs:
+                name, stamp, _ = msg
+                if chans[name] < stamp:
+                    chans[name] = stamp
                 await ws.send_str(str(msg))
 
             await asyncio.sleep(1)
